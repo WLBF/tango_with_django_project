@@ -11,26 +11,16 @@
         <h1>Rango says...hello world!</h1>
         {% endif %}
         
-        <strong>The most likes categories:</strong><br/>
-        {% if most_likes_categories %}
-            <ul>
-                {% for category in most_likes_categories %}
-                <li><a href="{% url 'category' category.slug %}">{{ category.name }}</a></li>
-                {% endfor %}
-            </ul>
-        {% else %}
-            <strong>There are no categories present.</strong><br/>
-        {% endif %}
-
         <strong>The most views categories:</strong><br/>
-        {% if most_views_categories %}
+        {% if categories %}
             <ul>
-                {% for category in most_views_categories %}
+                {% for category in categories %}
              
-                <li><a href="/rango/category/{{ category.slug }}">{{ category.name }}</a></li>
+                <li><a href="{% url 'category' category.slug %}">{{ category.name }}</a></li>
                 {% endfor %}
             </ul>
         {% else %}
             <strong>There are no categories present.</strong>
         {% endif %}
+        <p> visits: {{ visits }}</p> 
 {% endblock %}
