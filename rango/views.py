@@ -1,7 +1,6 @@
 from django.shortcuts import render
 from django.http import HttpResponse
-from rango.models import Category
-from rango.models import Page
+from rango.models import Category, Page, UserProfile
 from rango.forms import CategoryForm
 from rango.forms import PageForm
 from rango.forms import UserForm, UserProfileForm
@@ -9,7 +8,8 @@ from django.contrib.auth import authenticate, login, logout
 from django.http import HttpResponseRedirect, HttpResponse
 from django.contrib.auth.decorators import login_required
 from datetime import datetime
-
+from django.shortcuts import redirect 
+from django.contrib.auth.models import User
 
 
 def index(request):
@@ -73,7 +73,7 @@ def category(request, category_name_slug):
 
         # Retrieve all of the associated pages.
         # Note that filter returns >= 1 model instance.
-        pages = Page.objects.filter(category=category)
+        pages = Page.objects.filter(category=category).order_by('-views')
 
         # Adds our results list to the template context under name pages.
         context_dict['pages'] = pages
@@ -260,3 +260,74 @@ def user_logout(request):
 
     # Take the user back to the homepage.
     return HttpResponseRedirect('/rango/')
+
+
+
+
+def track_url(request):
+    page_id = None
+    url = '/rango/'
+    if request.method == 'GET':
+        if 'page_id' in request.GET:
+            page_id = request.GET['page_id']
+            try:
+                page = Page.objects.get(id=page_id)
+                page.views += 1
+                page.save()
+                url = page.url
+            except:
+                pass
+    return redirect(url)
+
+
+
+
+
+
+
+def edit_profile(request):
+   
+    url = '/rango/'
+
+    try:
+        profile = request.user.userprofile
+    except UserProfile.DoesNotExist:
+        profile = UserProfile(user=request.user)
+
+    if request.method == 'POST':
+        profile_form = UserProfileForm(data=request.POST, instance=profile)
+        if profile_form.is_valid():
+            profile_form.save(commit=False)
+            
+            if 'picture' in request.FILES:
+                print "picture"
+                profile.picture = request.FILES['picture']
+            
+            profile.save()
+            return redirect(url)
+
+        else:
+            print profile_form.errors
+
+    else:
+        profile_form = UserProfileForm(instance=profile)
+
+    return render(request,
+            'rango/edit_profile.html',
+            {'profile_form': profile_form} )
+
+ 
+
+def profile(request):
+    u = User.objects.get(username=request.user)
+    
+    try:
+        up = UserProfile.objects.get(user=u)
+    except:
+        up = None
+    
+    context_dict = {}
+    context_dict['user'] = u
+    context_dict['userprofile'] = up
+    return render(request, 'rango/profile.html', context_dict)
+
